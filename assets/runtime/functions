@@ -332,6 +332,7 @@ nextcloud_upgrade() {
 nextcloud_configure_domain() {
   echo "Configuring Nextcloud::trusted_domain..."
   nextcloud_set_param overwrite.cli.url ${NEXTCLOUD_URL}
+  sed -i "/overwrite.cli.url/ i\ \ 'overwritewebroot' => '/nextcloud'," ${NEXTCLOUD_APP_CONFIG}
   sed -i "s|0 => '.*',|0 => '${NEXTCLOUD_FQDN}',|" ${NEXTCLOUD_APP_CONFIG}
 }
 

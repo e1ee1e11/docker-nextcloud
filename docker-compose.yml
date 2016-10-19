@@ -1,42 +1,52 @@
-postgresql:
-  restart: always
-  image: sameersbn/postgresql:9.5-2
-  environment:
-    - DB_USER=nextcloud
-    - DB_PASS=password
-    - DB_NAME=nextcloud_db
-  volumes:
-    - /srv/docker/nextcloud/postgresql:/var/lib/postgresql
+version: '2'
 
-nextcloud:
-  restart: always
-  image: sameersbn/nextcloud:9.0.53-2
-  command: app:nextcloud
-  environment:
-    - DEBUG=false
-    - TZ=Asia/Kolkata
+services:
+  postgresql:
+    restart: always
+    image: sameersbn/postgresql:9.5-2
+    environment:
+      - DB_USER=nextcloud
+      - DB_PASS=password
+      - DB_NAME=nextcloud_db
+    volumes:
+      - ${PWD}/data/postgresql:/var/lib/postgresql
 
-    - NEXTCLOUD_URL=http://cloud.example.com:10080
+  nextcloud:
+    restart: always
+    image: e1ee1e11/nextcloud:9.0.53-2
+    command: app:nextcloud
+    depends_on:
+      - postgresql
+    environment:
+      - DEBUG=false
+      - TZ=Asia/Kolkata
+      - DB_TYPE=pgsql
+      - DB_HOST=postgresql
+      - DB_PORT=5432
+      - DB_USER=nextcloud
+      - DB_PASS=password
+      - DB_NAME=nextcloud_db
+      - NEXTCLOUD_URL=
+      - NEXTCLOUD_ADMIN_USER=
+      - NEXTCLOUD_ADMIN_PASSWORD=
+      - NEXTCLOUD_UPLOAD_MAX_FILESIZE=4G
+      - NEXTCLOUD_MAX_FILE_UPLOADS=20
+      - NEXTCLOUD_BACKUPS_EXPIRY=0
+    links:
+      - postgresql:postgresql
+    volumes:
+      - ${PWD}/data/nextcloud:/var/lib/nextcloud
 
-    - NEXTCLOUD_ADMIN_USER=
-    - NEXTCLOUD_ADMIN_PASSWORD=
-
-    - NEXTCLOUD_UPLOAD_MAX_FILESIZE=4G
-    - NEXTCLOUD_MAX_FILE_UPLOADS=20
-
-    - NEXTCLOUD_BACKUPS_EXPIRY=0
-  links:
-    - postgresql:postgresql
-  volumes:
-    - /srv/docker/nextcloud/nextcloud:/var/lib/nextcloud
-
-nginx:
-  image: sameersbn/nextcloud:9.0.53-2
-  command: app:nginx
-  environment:
-    - NEXTCLOUD_PHP_FPM_HOST=
-    - NEXTCLOUD_PHP_FPM_PORT=
-  links:
-    - nextcloud:php-fpm
-  ports:
-    - "10080:80"
+  nginx:
+    image: e1ee1e11/nextcloud:9.0.53-2
+    command: app:nginx
+    depends_on:
+      - nextcloud
+      - postgresql
+    environment:
+      - NEXTCLOUD_PHP_FPM_HOST=php-fpm
+      - NEXTCLOUD_PHP_FPM_PORT=9000
+    links:
+      - nextcloud:php-fpm
+    ports:
+      - "10085:80"
